@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Math Quiz Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    #quiz {
+      display: none;
+    }
+    #feedback {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    #timeBar {
+      height: 20px;
+      background-color: #4caf50;
+      transition: width 1s linear;
+    }
+    .hidden {
+      display: none;
+    }
+    .leaderboard {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Math Quiz Game</h1>
+    <button id="startButton">Start Quiz</button>
+    <div id="quiz">
+      <div>
+        <h2 id="question"></h2>
+        <input type="text" id="answer" placeholder="Your answer" autocomplete="off">
+        <button id="submitAnswer">Submit</button>
+      </div>
+      <div id="feedback"></div>
+      <div id="timeLeftDisplay">Time Left: <span id="timeLeft">30</span>s</div>
+      <div id="timeBar" style="width: 100%;"></div>
+      <p>Score: <span id="score">0</span></p>
+      <button id="pauseResumeButton">Pause</button>
+      <button id="hintButton">Hint</button>
+    </div>
+<div class="leaderboard hidden" id="leaderboard">
+  <h2>Leaderboard</h2>
+  <ol id="leaderboardList"></ol>
+</div>
+  </div>
+
+  <script>
+    let score = 0;
+    let timeLeft = 30;
+    let timer;
+    let currentQuestion;
+    let paused = false;
+
+    const sounds = {
+      correct: new Audio('https://www.soundjay.com/button/beep-07.wav'),
+      incorrect: new Audio('https://www.soundjay.com/button/beep-10.wav')
+    };
+
+    function generateQuestion() {
+      const num1 = Math.floor(Math.random() * 10) + 1 + Math.floor(score / 5);
+      const num2 = Math.floor(Math.random() * 10) + 1;
+      const operators = ['+', '-', '*', '/'];
+      const operator = operators[Math.floor(Math.random() * operators.length)];
+
+      let question, answer;
+
+      switch (operator) {
+        case '+':
+          question = `${num1} + ${num2}`;
+          answer = num1 + num2;
+          break;
+        case '-':
+          question = `${num1} - ${num2}`;
+          answer = num1 - num2;
+          break;
+        case '*':
+          question = `${num1} * ${num2}`;
+          answer = num1 * num2;
+          break;
+        case '/':
+          question = `${num1 * num2} / ${num2}`;
+          answer = num1;
+          break;
+      }
+
+      currentQuestion = { question, answer };
+      document.getElementById('question').innerText = `What is ${question}?`;
+      document.getElementById('feedback').innerText = '';
+      document.getElementById('answer').value = '';
+      document.getElementById('answer').focus();
+    }
+
+    function checkAnswer() {
+      const userAnswer = document.getElementById('answer').value.trim();
+      if (userAnswer === '') {
+        document.getElementById('feedback').innerText = 'Please enter an answer!';
+        return;
+      }
+
+      const parsedAnswer = parseInt(userAnswer, 10);
+      if (parsedAnswer === currentQuestion.answer) {
+        score++;
+        sounds.correct.play();
+        document.getElementById('feedback').innerText = 'Correct!';
+      } else {
+        sounds.incorrect.play();
+        document.getElementById('feedback').innerText = `Incorrect! The correct answer was ${currentQuestion.answer}.`;
+      }
+
+      document.getElementById('score').innerText = score;
+      generateQuestion();
+    }
+
+    function startGame() {
+      score = 0;
+      timeLeft = 30;
+      paused = false;
+
+      document.getElementById('score').innerText = score;
+      document.getElementById('timeLeft').innerText = timeLeft;
+      document.getElementById('quiz').style.display = 'block';
+      document.getElementById('leaderboard').classList.add('hidden');
+      generateQuestion();
+
+      clearInterval(timer);
+      timer = setInterval(() => {
+        if (!paused) {
+          timeLeft--;
+          document.getElementById('timeLeft').innerText = timeLeft;
+          document.getElementById('timeBar').style.width = `${(timeLeft / 120) * 100}%`;
+
+          if (timeLeft <= 0) {
+            clearInterval(timer);
+            showResult();
+          }
+        }
+      }, 1000);
+    }
+
+    function pauseResumeGame() {
+      paused = !paused;
+      document.getElementById('pauseResumeButton').innerText = paused ? 'Resume' : 'Pause';
+    }
+
+    function showHint() {
+      document.getElementById('feedback').innerText = `Hint: The answer is close to ${currentQuestion.answer}.`;
+    }
+
+function showResult() {
+  // Retrieve the leaderboard from local storage or initialize it
+  const leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+
+  // Add the current score to the leaderboard
+  leaderboard.push(score);
+
+  // Sort the leaderboard in descending order
+  leaderboard.sort((a, b) => b - a);
+
+  // Save the top 5 scores back to local storage
+  localStorage.setItem('leaderboard', JSON.stringify(leaderboard.slice(0, 5)));
+
+  // Display the leaderboard
+  const leaderboardList = document.getElementById('leaderboardList');
+  leaderboardList.innerHTML = ''; // Clear previous leaderboard entries
+  leaderboard.slice(0, 5).forEach((s, i) => {
+    const li = document.createElement('li');
+    li.innerText = `#${i + 1}: ${s} points`;
+    leaderboardList.appendChild(li);
+  });
+
+  // Hide the quiz and show the leaderboard
+  document.getElementById('quiz').style.display = 'none';
+  document.getElementById('leaderboard').classList.remove('hidden');
+}
+
+
+    document.getElementById('startButton').addEventListener('click', startGame);
+    document.getElementById('submitAnswer').addEventListener('click', checkAnswer);
+    document.getElementById('answer').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') checkAnswer();
+    });
+    document.getElementById('pauseResumeButton').addEventListener('click', pauseResumeGame);
+    document.getElementById('hintButton').addEventListener('click', showHint);
+  </script>
+</body>
+</html>
