@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B.M Interactive Math Quiz </title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    #quiz {
+      display: none;
+    }
+    #feedback {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    #timeBar {
+      height: 20px;
+      background-color: #4caf50;
+      transition: width 1s linear;
+    }
+    .hidden {
+      display: none;
+    }
+    .leaderboard {
+      margin-top: 20px;
+    }
+    .difficulty-buttons button {
+      margin: 5px;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .difficulty-buttons button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>B.M Interactive Math Quiz</h1>
+    <div id="difficultySelection" class="difficulty-buttons">
+      <p>Select Difficulty:</p>
+      <button data-difficulty="easy">Easy</button>
+      <button data-difficulty="medium">Medium</button>
+      <button data-difficulty="hard">Hard</button>
+    </div>
+
+    <div id="quiz">
+      <div>
+        <h2 id="question"></h2>
+        <input type="text" id="answer" placeholder="Your answer" autocomplete="off">
+        <button id="submitAnswer">Submit</button>
+        <button id="hintButton">Hint</button>
+      </div>
+      <div id="feedback"></div>
+      <div id="timeLeftDisplay">Time Left: <span id="timeLeft">120</span>s</div>
+      <div id="timeBar" style="width: 100%;"></div>
+      <p>Score: <span id="score">0</span></p>
+      <button id="pauseButton">Pause</button>
+      <button id="resumeButton" class="hidden">Resume</button>
+    </div>
+
+    <div class="leaderboard hidden" id="leaderboard">
+      <h2>Leaderboard</h2>
+      <ol id="leaderboardList"></ol>
+    </div>
+  </div>
+
+  <script>
+    // Variables
+    let score = 0;
+    let timeLeft = 120;
+    let timer;
+    let currentQuestion;
+    let difficulty = 'easy';
+    let isPaused = false;
+
+    // Generates a random math question based on difficulty
+    function generateQuestion() {
+      let num1, num2, operators, operator, question, answer;
+      
+      // Define range and operators based on difficulty
+      switch (difficulty) {
+        case 'easy':
+          num1 = Math.floor(Math.random() * 10) + 1;
+          num2 = Math.floor(Math.random() * 10) + 1;
+          operators = ['+', '-'];
+          break;
+        case 'medium':
+          num1 = Math.floor(Math.random() * 50) + 1;
+          num2 = Math.floor(Math.random() * 50) + 1;
+          operators = ['+', '-', '*'];
+          break;
+        case 'hard':
+          num1 = Math.floor(Math.random() * 100) + 1;
+          num2 = Math.floor(Math.random() * 100) + 1;
+          operators = ['+', '-', '*', '/'];
+          break;
+      }
+
+      operator = operators[Math.floor(Math.random() * operators.length)];
+
+      switch (operator) {
+        case '+':
+          question = `${num1} + ${num2}`;
+          answer = num1 + num2;
+          break;
+        case '-':
+          question = `${num1} - ${num2}`;
+          answer = num1 - num2;
+          break;
+        case '*':
+          question = `${num1} * ${num2}`;
+          answer = num1 * num2;
+          break;
+        case '/':
+          question = `${num1 * num2} / ${num2}`;
+          answer = num1;
+          break;
+      }
+
+      currentQuestion = { question, answer };
+      document.getElementById('question').innerText = `What is ${question}?`;
+      document.getElementById('feedback').innerText = '';
+      document.getElementById('answer').value = '';
+      document.getElementById('answer').focus();
+    }
+
+    // Checks the user's answer
+    function checkAnswer() {
+      const userAnswer = parseInt(document.getElementById('answer').value.trim(), 10);
+      if (isNaN(userAnswer)) {
+        document.getElementById('feedback').innerText = 'Please enter a valid number!';
+        return;
+      }
+
+      if (userAnswer === currentQuestion.answer) {
+        score++;
+        document.getElementById('feedback').innerText = 'Correct!';
+      } else {
+        document.getElementById('feedback').innerText = `Incorrect! The correct answer was ${currentQuestion.answer}.`;
+      }
+
+      document.getElementById('score').innerText = score;
+      generateQuestion();
+    }
+
+    // Provides a hint
+    function provideHint() {
+      document.getElementById('feedback').innerText = `Hint: The answer is ${currentQuestion.answer}`;
+    }
+
+    // Starts the game
+    function startGame() {
+      score = 0;
+      timeLeft = 120;
+      isPaused = false;
+
+      document.getElementById('score').innerText = score;
+      document.getElementById('timeLeft').innerText = timeLeft;
+      document.getElementById('quiz').style.display = 'block';
+      document.getElementById('leaderboard').classList.add('hidden');
+      generateQuestion();
+
+      clearInterval(timer);
+      timer = setInterval(() => {
+        if (!isPaused) {
+          timeLeft--;
+          document.getElementById('timeLeft').innerText = timeLeft;
+          document.getElementById('timeBar').style.width = `${(timeLeft / 120) * 100}%`;
+
+          if (timeLeft <= 0) {
+            clearInterval(timer);
+            showResult();
+          }
+        }
+      }, 1000);
+    }
+
+    // Shows the result and updates the leaderboard
+    function showResult() {
+      const leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+      leaderboard.push(score);
+      leaderboard.sort((a, b) => b - a);
+      const topScores = leaderboard.slice(0, 5);
+
+      localStorage.setItem('leaderboard', JSON.stringify(topScores));
+
+      const leaderboardList = document.getElementById('leaderboardList');
+      leaderboardList.innerHTML = '';
+      topScores.forEach((s, i) => {
+        const li = document.createElement('li');
+        li.innerText = `#${i + 1}: ${s} points`;
+        leaderboardList.appendChild(li);
+      });
+
+      document.getElementById('quiz').style.display = 'none';
+      document.getElementById('leaderboard').classList.remove('hidden');
+    }
+
+    // Pause and Resume functionality
+    function togglePause() {
+      isPaused = true;
+      document.getElementById('pauseButton').classList.add('hidden');
+      document.getElementById('resumeButton').classList.remove('hidden');
+    }
+
+    function resumeGame() {
+      isPaused = false;
+      document.getElementById('resumeButton').classList.add('hidden');
+      document.getElementById('pauseButton').classList.remove('hidden');
+    }
+
+    // Event Listeners
+    document.querySelectorAll('[data-difficulty]').forEach(button => {
+      button.addEventListener('click', (e) => {
+        difficulty = e.target.getAttribute('data-difficulty');
+        document.getElementById('difficultySelection').style.display = 'none';
+        startGame();
+      });
+    });
+
+    document.getElementById('submitAnswer').addEventListener('click', checkAnswer);
+    document.getElementById('hintButton').addEventListener('click', provideHint);
+    document.getElementById('pauseButton').addEventListener('click', togglePause);
+    document.getElementById('resumeButton').addEventListener('click', resumeGame);
+    document.getElementById('answer').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') checkAnswer();
+    });
+  </script>
+</body>
+</html>
