@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B.M Public School Interactive Math Quiz</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Interactive Math Quiz</h1>
+      <p>Test your math skills! Answer as many questions as you can before time runs out.</p>
+    </header>
+
+    <main>
+      <div id="menu">
+        <button id="startButton">Start Game</button>
+      </div>
+
+      <div id="quiz" style="display: none;">
+        <div class="info">
+          <p>Score: <span id="score">0</span></p>
+          <p>Time Left: <span id="timeLeft">120</span>s</p>
+        </div>
+        <div id="questionContainer">
+          <p id="question">Question will appear here...</p>
+          <input type="number" id="answer" placeholder="Enter your answer" />
+          <button id="submitAnswer">Submit Answer</button>
+        </div>
+        <p id="feedback"></p>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2024 B.M Public School Interactive Math Quiz</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
