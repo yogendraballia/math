@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number-Cube Matching Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f0f4f8;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin: 20px 0;
+    }
+
+    #gameContainer {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .box {
+      width: 80px;
+      height: 80px;
+      margin: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #4CAF50;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 1.2em;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    .box:hover {
+      background: #388E3C;
+      transform: scale(1.1);
+    }
+
+    .selected {
+      background: #FFC107 !important;
+      color: #000;
+    }
+
+    #feedback {
+      font-size: 1.2em;
+      margin: 10px 0;
+    }
+
+    #controls {
+      margin: 20px 0;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      background: #2196F3;
+      color: #fff;
+      cursor: pointer;
+      margin: 5px;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #1976D2;
+    }
+
+    #resultsModal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 1000;
+    }
+
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 999;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Number-Cube Matching Game</h1>
+  <div id="controls">
+    <button id="startButton">Start Game</button>
+    <button id="submitButton" class="hidden">Submit</button>
+    <p>Time Left: <span id="timeLeft">60</span> seconds</p>
+    <p>Score: <span id="score">0</span></p>
+  </div>
+  <div id="gameContainer">
+    <div class="row" id="numberContainer"></div>
+    <div class="row" id="cubeContainer"></div>
+    <p id="feedback"></p>
+  </div>
+
+  <div id="overlay"></div>
+  <div id="resultsModal">
+    <h2>Game Over!</h2>
+    <p id="finalScore"></p>
+    <p id="timeTaken"></p>
+    <button id="closeModal">Close</button>
+  </div>
+
+  <script>
+    const numbers = Array.from({ length: 10 }, (_, i) => i + 1); // Numbers from 1 to 10
+    const cubes = numbers.map(num => num ** 3); // Cubes of numbers from 1 to 10
+    let score = 0;
+    let timeLeft = 60;
+    let selectedNumber = null;
+    let selectedCube = null;
+    let timer;
+
+    document.getElementById('startButton').addEventListener('click', startGame);
+    document.getElementById('submitButton').addEventListener('click', endGame);
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+
+    function startGame() {
+      resetGame();
+      shuffleArray(numbers);
+      shuffleArray(cubes);
+      createBoxes('numberContainer', numbers, 'number');
+      createBoxes('cubeContainer', cubes, 'cube');
+      startTimer();
+    }
+
+    function resetGame() {
+      score = 0;
+      timeLeft = 60;
+      selectedNumber = null;
+      selectedCube = null;
+      document.getElementById('score').innerText = score;
+      document.getElementById('timeLeft').innerText = timeLeft;
+      document.getElementById('feedback').innerText = '';
+      document.getElementById('submitButton').classList.remove('hidden');
+      clearInterval(timer);
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function createBoxes(containerId, values, type) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      values.forEach(value => {
+        const box = document.createElement('div');
+        box.classList.add('box');
+        box.textContent = value;
+        box.dataset.value = value;
+        box.addEventListener('click', () => selectBox(box, type));
+        container.appendChild(box);
+      });
+    }
+
+    function selectBox(box, type) {
+      if (type === 'number') {
+        if (selectedNumber) selectedNumber.classList.remove('selected');
+        selectedNumber = box;
+      } else {
+        if (selectedCube) selectedCube.classList.remove('selected');
+        selectedCube = box;
+      }
+      box.classList.add('selected');
+      if (selectedNumber && selectedCube) checkMatch();
+    }
+
+    function checkMatch() {
+      const number = parseInt(selectedNumber.dataset.value);
+      const cube = parseInt(selectedCube.dataset.value);
+      if (number ** 3 === cube) {
+        score++;
+        document.getElementById('score').innerText = score;
+        document.getElementById('feedback').innerText = 'Correct!';
+        setTimeout(() => {
+          selectedNumber.style.visibility = 'hidden';
+          selectedCube.style.visibility = 'hidden';
+          selectedNumber = null;
+          selectedCube = null;
+        }, 500);
+      } else {
+        document.getElementById('feedback').innerText = 'Try again!';
+        setTimeout(() => {
+          selectedNumber.classList.remove('selected');
+          selectedCube.classList.remove('selected');
+          selectedNumber = null;
+          selectedCube = null;
+        }, 500);
+      }
+    }
+
+    function startTimer() {
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timeLeft').innerText = timeLeft;
+        if (timeLeft <= 0) endGame();
+      }, 1000);
+    }
+
+    function endGame() {
+      clearInterval(timer);
+      document.getElementById('submitButton').classList.add('hidden');
+      showResultsModal();
+    }
+
+    function showResultsModal() {
+      document.getElementById('overlay').style.display = 'block';
+      document.getElementById('resultsModal').style.display = 'block';
+      document.getElementById('finalScore').innerText = `Your final score is ${score}`;
+      document.getElementById('timeTaken').innerText = `Time taken: ${60 - timeLeft} seconds`;
+    }
+
+    function closeModal() {
+      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('resultsModal').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
