@@ -143,6 +143,11 @@
     canvas.addEventListener('mouseup', () => isDrawing = false);
     canvas.addEventListener('mousemove', draw);
 
+    // Touch support
+    canvas.addEventListener('touchstart', startTouch, { passive: true });
+    canvas.addEventListener('touchmove', drawTouch, { passive: true });
+    canvas.addEventListener('touchend', () => isDrawing = false);
+
     document.querySelectorAll('.color-btn').forEach(button => {
       button.addEventListener('click', () => {
         currentColor = button.getAttribute('data-color');
@@ -182,6 +187,23 @@
       const rect = canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
+      ctx.beginPath();
+      ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function startTouch(event) {
+      isDrawing = true;
+      drawTouch(event);
+    }
+
+    function drawTouch(event) {
+      const touch = event.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+
+      ctx.fillStyle = isEraser ? 'white' : currentColor;
       ctx.beginPath();
       ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
       ctx.fill();
