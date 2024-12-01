@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B.M Public School Kids Coloring</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+      background-color: #f9f9f9;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .message {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #555;
+    }
+
+    .color-palette {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .color-btn {
+      width: 50px;
+      height: 50px;
+      border: none;
+      margin: 5px;
+      cursor: pointer;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .color-btn:hover {
+      transform: scale(1.1);
+    }
+
+    canvas {
+      border: 2px solid black;
+      cursor: crosshair;
+      width: 100%;
+      max-width: 900px;
+      height: auto;
+    }
+
+    .controls {
+      margin-top: 20px;
+    }
+
+    #clearCanvas, #saveCanvas, #fillCanvas, #eraserMode {
+      padding: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      margin: 5px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+
+    #clearCanvas:hover, #saveCanvas:hover, #fillCanvas:hover, #eraserMode:hover {
+      background-color: #0056b3;
+    }
+
+    #brushSize {
+      font-size: 14px;
+      padding: 5px;
+    }
+
+    #modeIndicator {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #007bff;
+    }
+
+    @media (max-width: 600px) {
+      .color-btn {
+        width: 40px;
+        height: 40px;
+      }
+
+      #clearCanvas, #saveCanvas, #fillCanvas, #eraserMode {
+        font-size: 12px;
+        padding: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>B.M Public School - Harpur Ballia</h1>
+  <p class="message">"Unleash your creativity, one color at a time! Let your imagination soar."</p>
+  <div class="color-palette">
+    <button class="color-btn" style="background-color: red;" data-color="red">Red</button>
+    <button class="color-btn" style="background-color: blue;" data-color="blue">Blue</button>
+    <button class="color-btn" style="background-color: yellow;" data-color="yellow">Yellow</button>
+    <button class="color-btn" style="background-color: green;" data-color="green">Green</button>
+    <button class="color-btn" style="background-color: black;" data-color="black">Black</button>
+    <button class="color-btn" style="background-color: orange;" data-color="orange">Orange</button>
+    <button class="color-btn" style="background-color: purple;" data-color="purple">Purple</button>
+    <button class="color-btn" style="background-color: pink;" data-color="pink">Pink</button>
+    <button class="color-btn" style="background-color: brown;" data-color="brown">Brown</button>
+    <button class="color-btn" style="background-color: white; border: 1px solid black;" data-color="white">White</button>
+    <button class="color-btn" style="background-color: gray;" data-color="gray">Gray</button>
+    <button class="color-btn" style="background-color: cyan;" data-color="cyan">Cyan</button>
+    <button class="color-btn" style="background-color: magenta;" data-color="magenta">Magenta</button>
+  </div>
+  <canvas id="coloringCanvas"></canvas>
+  <div class="controls">
+    <select id="brushSize">
+      <option value="5">Small</option>
+      <option value="10" selected>Medium</option>
+      <option value="20">Large</option>
+    </select>
+    <button id="eraserMode">Eraser</button>
+    <button id="fillCanvas">Fill Background</button>
+    <button id="clearCanvas">Clear</button>
+    <button id="saveCanvas">Save Drawing</button>
+  </div>
+  <div id="modeIndicator">Mode: Drawing</div>
+  <script>
+    const canvas = document.getElementById('coloringCanvas');
+    const ctx = canvas.getContext('2d');
+    const modeIndicator = document.getElementById('modeIndicator');
+    let isDrawing = false;
+    let currentColor = 'black';
+    let brushSize = 10;
+    let isEraser = false;
+
+    // Adjust canvas size for mobile
+    canvas.width = Math.min(window.innerWidth * 0.9, 900);
+    canvas.height = canvas.width / 1.8;
+
+    canvas.addEventListener('mousedown', () => isDrawing = true);
+    canvas.addEventListener('mouseup', () => isDrawing = false);
+    canvas.addEventListener('mousemove', draw);
+
+    document.querySelectorAll('.color-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        currentColor = button.getAttribute('data-color');
+        isEraser = false;
+        modeIndicator.textContent = 'Mode: Drawing';
+      });
+    });
+
+    document.getElementById('brushSize').addEventListener('change', (event) => {
+      brushSize = parseInt(event.target.value, 10);
+    });
+
+    document.getElementById('eraserMode').addEventListener('click', () => {
+      isEraser = true;
+      modeIndicator.textContent = 'Mode: Eraser';
+    });
+
+    document.getElementById('clearCanvas').addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    document.getElementById('fillCanvas').addEventListener('click', () => {
+      ctx.fillStyle = currentColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    });
+
+    document.getElementById('saveCanvas').addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = 'my-drawing.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    });
+
+    function draw(event) {
+      if (!isDrawing) return;
+      ctx.fillStyle = isEraser ? 'white' : currentColor;
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      ctx.beginPath();
+      ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  </script>
+</body>
+</html>
